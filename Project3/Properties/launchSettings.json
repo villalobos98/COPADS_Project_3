@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Project3": {
+      "commandName": "Project",
+      "commandLineArgs": "keygen 256",
+      "workingDirectory": "C:\\Users\\Isaias Villalobos\\source\\repos\\Project3\\Project3"
+    }
+  }
+}
