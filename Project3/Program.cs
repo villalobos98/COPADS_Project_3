@@ -1,10 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Numerics;
-using System.Text;
+﻿using System;
 
 namespace Project3
 {
