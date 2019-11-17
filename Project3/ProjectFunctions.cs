@@ -28,24 +28,6 @@ namespace Project3
         public static BigInteger bigE;
         public static BigInteger bigN;
 
-        static BigInteger modInverse(BigInteger a, BigInteger n)
-        {
-            BigInteger i = n, v = 0, d = 1;
-            while (a > 0)
-            {
-                BigInteger t = i / a, x = a;
-                a = i % x;
-                i = x;
-                x = d;
-                d = v - t * x;
-                v = x;
-            }
-            v %= n;
-            if (v < 0) v = (v + n) % n;
-            return v;
-        }
-
-
         public void keyGen(int keySize)
         {
             var randomNum = new Random();
@@ -68,7 +50,7 @@ namespace Project3
 
             BigInteger E = 65537;
 
-            BigInteger D = modInverse(E, r);
+            BigInteger D = ModInverseExtension.modInverse(E, r);
 
             var publicKeyFile = File.Create("public.key");
             var privateKeyFile = File.Create("private.key");
