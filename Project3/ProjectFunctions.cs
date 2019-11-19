@@ -1,4 +1,11 @@
-﻿using Newtonsoft.Json;
+﻿//@author: Isaias Villalobos
+//@date: 11/19/2019
+//@description: This class will handle generation of public key and private key, sending a key to a server, 
+//              sending a message, decoding a message, getting a message, and getting a key.
+//              There are two inner classes which will help convert the JSON object recieved from the server to an object.
+//              The other class will help to convert an object into a JSON formatted string to send to the server.
+
+using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Linq;
@@ -8,41 +15,54 @@ using System.Text;
 
 namespace Project3
 {
+    /*
+     *This class will handle converting a JSON object into a object. 
+     */
     public class KeyForm
     {
         public String email { get; set; }
         public String key { get; set; }
-
     }
-
+    /*
+     *This class will help setting the field of this 
+     *object to be converted later and sent to the server as JSON
+     */
     public class MessageForm
     {
         public String email { get; set; }
         public String content { get; set; }
-
     }
 
+    /*
+    *This class will contain many useful functions that are used throughout the program.
+    */
     class ProjectFunctions
     {
-
+        //These are variables to be used later when you need the E/D values or N values.
         public static BigInteger bigE;
         public static BigInteger bigN;
 
+        /*
+        * @input: an integer size for the key.
+        * @output: void
+        * @descr:  this will generate a keypair (public and private keys) and store them locally on the disk 
+        *          (in ﬁles called public.key and private.key respectively). 
+        */
         public void keyGen(int keySize)
         {
             var randomNum = new Random();
-            //var percentage = randomNum.Next(1, 8) / 8;
-            keySize /= 2;
-            var a = (int)(((float)(new Random().Next(9800, 10200)) / (float)10000) * (float)keySize);
-            var b = keySize * 2 - a;
+            var psize = keySize / 2;
+            var percentage = randomNum.Next(-keySize/10, keySize/10);
 
-            //when you mutliple a and b it should equal the number of bits in the keysize
-            //var a = keySize + (keySize * percentage); //Find a percentage of the original keysize
-            //var b = keySize - (keySize * percentage); //Find a percentage of the original keysize
+            var a = 0;
+            
+            a = psize - percentage/ 8 * 8;
 
             PrimeFunction primeFunctions = new PrimeFunction();
-            BigInteger p = primeFunctions.GeneratePrimeNumber(a);
-            BigInteger q = primeFunctions.GeneratePrimeNumber(b);
+            BigInteger p = primeFunctions.parallelPrimeFunction(a);
+
+            var b = keySize - p.ToByteArray().Length * 8;
+            BigInteger q = primeFunctions.parallelPrimeFunction(b);
 
 
             BigInteger N = p * q;
@@ -63,8 +83,8 @@ namespace Project3
 
             if (BitConverter.IsLittleEndian)
             {
-                Array.Reverse(e, 0, e.Length); //supposed to reverse e
-                Array.Reverse(n, 0, n.Length); //supposed to reverse n
+                Array.Reverse(e, 0, e.Length);
+                Array.Reverse(n, 0, n.Length); 
             }
 
             var publicKey = new Byte[4 + arrayE.Length + 4 + arrayN.Length];
@@ -111,7 +131,13 @@ namespace Project3
 
         }
 
-
+        /*
+        * @input: an string representing the email of the user you want to send a key to.
+        * @output: void
+        * @descr:  this option base64 encodes the public key and uploads it to the server. 
+        *          The server will then register this email address as a valid receiver of messages. 
+        *          The private key will remain locally.
+        */
         public async void sendKey(String email)
         {
             HttpClient client = new HttpClient();
@@ -127,7 +153,6 @@ namespace Project3
             {
                 var result = await client.PutAsync(URL, content);
                 result.EnsureSuccessStatusCode();
-                //Console.WriteLine(result.EnsureSuccessStatusCode.ToString());
 
             }
             catch (HttpRequestException e)
@@ -138,9 +163,11 @@ namespace Project3
 
         }
         /*
-         * email plaintext - this will base64 encode a message for a user in the to
-           field. If you do not have a public key for that particular user, you should show an
-           error message indicating that the key must be downloaded first.
+         *  @input: A string representing the email, a string representing the message 
+         *  @output: void
+         *  @decr: this will base64 encode a message for a user in the to
+                   field. If you do not have a public key for that particular user, you should show an
+                    error message indicating that the key must be downloaded first.
          */
         public async void sendMsg(String email, String message)
         {
@@ -150,8 +177,14 @@ namespace Project3
             //call decode key on the public key to get e and n
             decodeKey(File.ReadAllText(email + ".key"));
 
-            var encryptedText = BigInteger.ModPow(encryptedMessage, bigE, bigN);
+            //make sure to have key from a user first
+            if (!File.Exists(email + ".key"))
+            {
+                Console.WriteLine("Key does not exist for " + email);
+                return;
+            }
 
+            var encryptedText = BigInteger.ModPow(encryptedMessage, bigE, bigN);
             var base64EncodedEncryptedText = Convert.ToBase64String(encryptedText.ToByteArray());
             var URL = "http://kayrun.cs.rit.edu:5000/Message/" + email;
 
@@ -164,11 +197,16 @@ namespace Project3
             var result = await client.PutAsync(URL, content);
             result.EnsureSuccessStatusCode();
 
-            Console.WriteLine(messageForm.content);
+            //Console.WriteLine(messageForm.content);
 
         }
 
-
+        /*
+         *  @input: A string representing the key, which may be a public key or private key
+         *  @output: void
+         *  @decr: This function will convert a key to a base64 string and then extract 'e' and 'n' for a public key
+         *         This function will also extract 'd' and 'n' from a private key.
+         */
         public void decodeKey(String key)
         {
             //This is for decoding little e
@@ -195,6 +233,11 @@ namespace Project3
 
         }
 
+        /*
+         *  @input: A string representing a user's email
+         *  @output: void
+         *  @decr: This function will get the public key for another user.
+         */
         public async void getkey(String emailAddress)
         {
 
@@ -204,10 +247,11 @@ namespace Project3
             var result = await client.GetAsync(URL);
 
             result.EnsureSuccessStatusCode();
-            Console.WriteLine(await result.Content.ReadAsStringAsync());
+            var str = await result.Content.ReadAsStringAsync();
 
             //Extract information from the response from the server, should contain an email and key
-            KeyForm keyform = JsonConvert.DeserializeObject<KeyForm>(await result.Content.ReadAsStringAsync());
+            var keyform = JsonConvert.DeserializeObject<KeyForm>(str);
+            //Check to see if valid 
 
             //Decode the key
             decodeKey(keyform.key);
@@ -224,6 +268,12 @@ namespace Project3
             }
 
         }
+
+        /*
+         *  @input: A string representing a user's email
+         *  @output: void
+         *  @decr: This function will get a message from another user.
+         */
         public async void getMsg(String emailAddress)
         {
             HttpClient client = new HttpClient();
@@ -231,18 +281,15 @@ namespace Project3
             var result = await client.GetAsync(URL);
             result.EnsureSuccessStatusCode();
             MessageForm messageForm = JsonConvert.DeserializeObject<MessageForm>(await result.Content.ReadAsStringAsync());
-            Console.WriteLine(messageForm.content);
 
             decodeKey(File.ReadAllText("private.key"));
             var ciperText = Convert.FromBase64String(messageForm.content);
             BigInteger cipher = new BigInteger(ciperText);
             var messageBytes = BigInteger.ModPow(cipher, bigE, bigN);
 
-            Console.WriteLine((messageBytes));
+            //Console.WriteLine((messageBytes));
             var message = Encoding.Default.GetString(messageBytes.ToByteArray());
             Console.WriteLine(message);
-            //Decode the base64message that was sent and use teh private key on it.
-
         }
     }
 }

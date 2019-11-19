@@ -34,10 +34,9 @@
             return isPrime;
         }
 
-        public void parallelPrimeFunction(int bitSize, int countsArgument)
+        public BigInteger parallelPrimeFunction(int bitSize, int countsArgument = 1)
         {
-            List<BigInteger> intList = new List<BigInteger>();
-
+            BigInteger returnVal;
             Parallel.For(0, Int32.MaxValue, (i, state) =>
             {
 
@@ -46,27 +45,12 @@
 
                 if (isPrime)
                 {
-                    if (countsArgument <= intList.Count)
-                    {
-                        state.Break();
-                    }
-                    lock (locker)
-                    {
-                        intList.Add(primeNumber);
-                    }
+                    returnVal =  primeNumber;
+                    state.Break();
 
                 }
             });
-            //This does all the printing for the integers inside the intList.
-            for (int i = 0; i < countsArgument; i++)
-            {
-                int index = i + 1;
-                Console.WriteLine(index + ": " + intList[i]);
-                if (i < countsArgument - 1)
-                {
-                    Console.WriteLine("");
-                }
-            }
+            return returnVal;
 
         }
     }
