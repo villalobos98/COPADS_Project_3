@@ -3,15 +3,16 @@
 //@description: This class will handle input the messenger application
 //              This class will use another class, to handle the speicific command the user entered.
 //              This class will output any useful messenges to the user.
-
-
 using System;
 
 namespace Project3
 {
     class Program
     {
-       
+       /*
+        * @input: string array from standard input, console
+        * @desc: Handle the command line arguments
+        */
         public static void Main(string[] args)
         {
             if (args.Length == 1)
@@ -30,7 +31,6 @@ namespace Project3
                 var plainText = args[2];
                 ProjectFunctions functions = new ProjectFunctions();
                 functions.sendMsg(URL, plainText);
-                Console.WriteLine("Message written");
                 Console.ReadLine();
             }
             if (args[0] == "sendKey")
@@ -58,7 +58,6 @@ namespace Project3
                 var email = args[1];
                 ProjectFunctions functions = new ProjectFunctions();
                 functions.getMsg(email);
-                Console.WriteLine("Message written");
                 Console.ReadLine();
 
             }
@@ -70,10 +69,11 @@ namespace Project3
                     return;
                 }
                 ProjectFunctions functions = new ProjectFunctions();
-                functions.getkey(args[1]);
+                functions.getKey(args[1]);
+                Console.WriteLine("Key Retrieved");
                 Console.ReadLine(); 
             }
-            if (args[0] == "keygen")
+            if (args[0] == "keyGen")
             {
                 if (args.Length < 2)
                 {
@@ -82,6 +82,7 @@ namespace Project3
                 }
                 ProjectFunctions functions = new ProjectFunctions();
                 functions.keyGen(Convert.ToInt32(args[1]));
+                Console.WriteLine("Keys Generated");
                 Console.ReadLine(); 
             }
         }
